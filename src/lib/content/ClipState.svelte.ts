@@ -1,7 +1,6 @@
-import { getContext, setContext } from 'svelte';
-
-import { searchClips } from '$lib/api';
 import type { ClipObject, SortType } from '$lib/types';
+import { getContext, setContext } from 'svelte';
+import { searchClips } from '$lib/api';
 
 const CLIP_KEY = Symbol('clip');
 
@@ -11,9 +10,10 @@ export class ClipState {
   sort: SortType = $state('date');
   channel: string = $state('');
   cursor: string = $state('');
-
   hasResults: boolean = $derived(this.clips.length > 0);
   endReached: boolean = $derived(this.channel != '' && this.cursor === '');
+  startDate: Date | undefined = $state(undefined);
+  endDate: Date | undefined = $state(undefined);
 
   constructor() {}
 
@@ -22,21 +22,21 @@ export class ClipState {
     this.clips = [];
     this.cursor = '';
     this.sort = 'date';
-  }
+  };
 
   search = async (channel: string): Promise<void> => {
     if (this.channel !== channel) {
       this.reset();
       this.channel = channel;
+      this.startDate = undefined;
+      this.endDate = undefined;
     }
 
-    const res = await searchClips(this.channel, this.cursor, this.sort);
-    this.clips = [
-      ...this.clips,
-      ...res.clips.filter(c1 => !this.clips.some(c2 => c1.id === c2.id))
-    ];
+    const res = await searchClips(this.channel, this.cursor, this.sort, this.startDate, this.endDate);
+
+    this.clips = [...this.clips, ...res.clips.filter((c1) => !this.clips.some((c2) => c1.id === c2.id))];
     this.cursor = res.nextCursor;
-  }
+  };
 
   more = async (): Promise<boolean> => {
     let res = false;
@@ -45,7 +45,7 @@ export class ClipState {
       res = true;
     }
     return res;
-  }
+  };
 
   selectSort = async (type: SortType): Promise<void> => {
     if (type !== this.sort) {
@@ -55,7 +55,7 @@ export class ClipState {
       this.channel = channel;
       await this.search(this.channel);
     }
-  }
+  };
 }
 
 export function getClipState(): ClipState {

@@ -8,22 +8,27 @@
 }
 
 :root {
+  --primary: #00ff00;
+  --hover-primary: #0cb40c;
+  --secondary: #6d6d6d;
+  --date-bg: #2a2e35;
+  --date-header-bg: #1f2329;
+  --date-border: rgba(55, 65, 81, 0.5);
+  --date-text: #9ca3af;
+  --date-text-muted: #4b5563;
+  --date-text-light: #d1d5db;
+  --date-hover: rgba(55, 65, 81, 0.5);
+  --date-disabled: #374151;
   font-weight: 400;
   font-style: normal;
   font-synthesis: none;
   font-optical-sizing: auto;
   font-family: 'Giphurs', system-ui, sans-serif, arial;
-
   text-rendering: optimizeLegibility;
   line-height: 1.5;
-
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: var(--color-gray-900);
-
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  --primary: #00ff00;
-  --secondary: #6d6d6d;
 }

@@ -20,6 +20,7 @@
   const clips: ClipObject[] = $derived(content.clipState?.clips ?? []);
   const handleChannelClick = content.searchClips;
   const selectSort = content.selectSort;
+  const handleDateRange = content.DateRangeAndSearch;
 
   const video: VideoState = getVideoState();
   const handleClipClick = video.open;
@@ -37,50 +38,49 @@
     if (!content.channelSelected || !scrollElement) return;
     const scrolledTo = scrollElement.scrollTop + scrollElement.clientHeight;
     const isGoingDown = scrolledTo > lastScrolledTo;
-    const shouldTrigger = scrolledTo >= (scrollElement.scrollHeight - THRESHOLD_PX);
+    const shouldTrigger = scrolledTo >= scrollElement.scrollHeight - THRESHOLD_PX;
     if (isGoingDown && shouldTrigger && !triggered) {
       triggered = true;
       const hasMore = await content.moreClips();
       if (!hasMore) notif.success('No more clips');
-      timeoutId = setTimeout(() => { triggered = false; }, COOLDOWN_MS);
+      timeoutId = setTimeout(() => {
+        triggered = false;
+      }, COOLDOWN_MS);
     }
     lastScrolledTo = scrolledTo;
-  }
-
+  };
   onDestroy(() => {
     if (timeoutId) clearTimeout(timeoutId);
   });
 </script>
 
-<div class="w-full min-h-0 flex flex-col flex-1 m-3
+<div
+  class="w-full min-h-0 flex flex-col flex-1 m-3
   transition-hidden duration-300 ease-in-out
-  { content.hasResults ? "" : "hidden" }"
+  {content.hasResults ? '' : 'hidden'}"
 >
   {#if content.channelSelected}
-  <Sort {selectSort} />
+    <Sort {selectSort} onDateRangeChange={handleDateRange} />
   {/if}
-  <div
-    bind:this={scrollElement}
-    onscroll={handleScroll}
-    class="outline overflow-y-auto size-full flex-1 bg-gray-950"
-  >
-    <div class="m-3 p-2 items-center gap-2 grid grid-cols-2
+  <div bind:this={scrollElement} onscroll={handleScroll} class="outline overflow-y-auto size-full flex-1 bg-gray-950">
+    <div
+      class="m-3 p-2 items-center gap-2 grid grid-cols-2
       md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
     >
       {#if !content.channelSelected}
         {#each channels as channel}
-        <Channel channel={channel} handleClick={handleChannelClick} />
+          <Channel {channel} handleClick={handleChannelClick} />
         {/each}
       {:else}
         {#each clips as clip}
-        <Clip clip={clip} handleClick={handleClipClick} />
+          <Clip {clip} handleClick={handleClipClick} />
         {/each}
       {/if}
     </div>
   </div>
 </div>
 {#if !content.hasResults && content.firstSearch && !content.searching}
-<Message text="no results found :(" />
+  <Message text="no results found :(" />
 {:else if content.playing}
-<VideoPlayer />
+  <VideoPlayer />
 {/if}

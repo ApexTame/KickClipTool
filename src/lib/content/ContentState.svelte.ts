@@ -14,10 +14,8 @@ export class ContentState {
   input: string = $state('');
   playing: boolean = $state(false);
   searching: boolean = $state(false);
-
   channelState: ChannelState | null = null;
   clipState: ClipState | null = null;
-
   channelSelected: boolean = $derived(this.clipState?.channel !== '');
   hasResults: boolean = $derived(!!this.channelState?.hasResults || !!this.clipState?.hasResults);
 
@@ -33,7 +31,7 @@ export class ContentState {
     await this.channelState.search(this.input);
     this.searching = false;
     if (!this.firstSearch) this.firstSearch = true;
-  }
+  };
 
   searchClips = async (channel: string): Promise<void> => {
     if (!this.channelState || !this.clipState) return;
@@ -42,7 +40,7 @@ export class ContentState {
     this.channelState.reset();
     await this.clipState.search(channel);
     this.searching = false;
-  }
+  };
 
   moreClips = async (): Promise<boolean> => {
     if (!this.clipState) return false;
@@ -50,28 +48,39 @@ export class ContentState {
     const res = await this.clipState.more();
     this.searching = false;
     return res;
-  }
+  };
 
   selectSort = async (type: SortType): Promise<void> => {
     if (!this.clipState) return;
     this.searching = true;
     await this.clipState.selectSort(type);
     this.searching = false;
-  }
+  };
+
+  DateRangeAndSearch = async (startDate: Date | undefined, endDate: Date | undefined): Promise<void> => {
+    if (!this.clipState) return;
+    this.searching = true;
+    this.clipState.startDate = startDate;
+    this.clipState.endDate = endDate;
+    this.clipState.clips = [];
+    this.clipState.cursor = '';
+    await this.clipState.search(this.clipState.channel);
+    this.searching = false;
+  };
 
   openVideo = (): void => {
     this.playing = true;
-  }
+  };
 
   downloadVideo = async (id: string, url: string): Promise<void> => {
     this.downloads.push(id);
     await downloadClip(url, id);
     this.downloads.splice(this.downloads.indexOf(id), 1);
-  }
+  };
 
   closeVideo = (): void => {
     this.playing = false;
-  }
+  };
 }
 
 export function getContentState(): ContentState {
