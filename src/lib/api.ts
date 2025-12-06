@@ -64,11 +64,16 @@ export async function searchChannels(query: string): Promise<ChannelsResponse> {
 export async function searchClips(channel: string, cursor: string, sort: SortType, startDate?: Date, endDate?: Date): Promise<ClipsResponse> {
   const validChannel = cleanChannelQuery(channel);
   const validCursor = cleanClipQuery(cursor);
+  const isSortbyView = sort === 'view';
   let result: ClipsResponse = { clips: [], nextCursor: '' };
 
   if (validChannel.length < 3) return result;
 
   if (!startDate || !endDate) {
+    return fetchSinglePage(validChannel, validCursor, sort);
+  }
+
+  if (isSortbyView) {
     return fetchSinglePage(validChannel, validCursor, sort);
   }
 
