@@ -166,7 +166,9 @@
           <button
             onclick={() => selectYear(year)}
             class="p-2 rounded-lg text-sm transition-all bg-[var(--date-header-bg)] cursor-pointer
-              {year === currentMonth.getFullYear() ? 'bg-[var(--primary)] text-white' : 'text-[var(--date-text-light)] hover:bg-[var(--date-hover)]'}"
+              {year === currentMonth.getFullYear()
+              ? 'bg-[var(--primary)] font-bold text-[var(--date-selected-text)]'
+              : 'text-[var(--date-text-light)] hover:bg-[var(--date-hover)]'}"
           >
             {year}
           </button>
@@ -184,7 +186,9 @@
             }}
             disabled={Feture}
             class="p-2 rounded-lg text-sm transition-all cursor-pointer bg-[var(--date-header-bg)] disabled:bg-none disabled:text-[var(--date-disabled)] disabled:cursor-not-allowed
-              {index === currentMonth.getMonth() ? 'bg-[var(--primary)] text-white' : 'text-[var(--date-text-light)] hover:bg-[var(--date-hover)]'}"
+              {index === currentMonth.getMonth()
+              ? 'bg-[var(--primary)] font-bold text-[var(--date-selected-text)]'
+              : 'text-[var(--date-text-light)] hover:bg-[var(--date-hover)]'}"
           >
             {month}
           </button>
@@ -209,9 +213,9 @@
               disabled={Future}
               class="w-9 h-9 text-sm rounded-lg transition-all disabled:text-[var(--date-disabled)] disabled:cursor-not-allowed
               {Selected
-                ? 'bg-[var(--primary)] text-white hover:bg-[var(--hover-primary)]'
+                ? 'bg-[var(--primary)] font-bold text-[var(--date-selected-text)] hover:bg-[var(--hover-primary)]'
                 : Today
-                  ? 'bg-[var(--primary)] text-white font-bold hover:bg-[var(--hover-primary)] focus:ring-0'
+                  ? 'bg-[var(--primary)] font-bold text-[var(--date-selected-text)]   hover:bg-[var(--hover-primary)] focus:ring-0'
                   : 'text-[var(--date-text-light)] hover:bg-[var(--date-hover)]'}"
             >
               {date.getDate()}
