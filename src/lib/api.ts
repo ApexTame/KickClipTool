@@ -62,48 +62,61 @@ export async function searchChannels(query: string): Promise<ChannelsResponse> {
 }
 
 export async function searchClips(channel: string, cursor: string, sort: SortType, startDate?: Date, endDate?: Date): Promise<ClipsResponse> {
+  const allClips: ClipObject[] = [];
+
+  const nextCursor = await searchInBatches(channel, cursor, sort, startDate, endDate, (clips) => allClips.push(...clips));
+
+  return { clips: allClips, nextCursor };
+}
+
+export async function searchInBatches(
+  channel: string,
+  cursor: string,
+  sort: SortType,
+  startDate: Date | undefined,
+  endDate: Date | undefined,
+  onClips: (clips: ClipObject[]) => void
+): Promise<string> {
   const validChannel = cleanChannelQuery(channel);
   const validCursor = cleanClipQuery(cursor);
-  const isSortbyView = sort === 'view';
-  let result: ClipsResponse = { clips: [], nextCursor: '' };
 
-  if (validChannel.length < 3) return result;
+  if (validChannel.length < 3) return '';
 
-  if (!startDate || !endDate) {
-    return fetchSinglePage(validChannel, validCursor, sort);
-  }
-
-  if (isSortbyView) {
-    return fetchSinglePage(validChannel, validCursor, sort);
-  }
-
-  const startUTC = new Date(startDate);
+  const startUTC = new Date(startDate ?? '');
   startUTC.setHours(0, 0, 0, 0);
-  const endUTC = new Date(endDate);
+  const endUTC = new Date(endDate ?? '');
   endUTC.setHours(23, 59, 59, 999);
 
-  let allClips: ClipObject[] = [];
+  if (!startDate || !endDate || sort === 'view') {
+    const page = await fetchPage(validChannel, validCursor, sort);
+    const mappedClips = page.clips ? mapClips(page.clips) : [];
+    onClips(mappedClips);
+    return page.nextCursor ?? '';
+  }
+
   let currentCursor = validCursor;
   let reachedStartDate = false;
 
   while (!reachedStartDate) {
-    const firstPage = await fetchPage(validChannel, currentCursor, sort);
+    const page = await fetchPage(validChannel, currentCursor, sort);
 
-    if (!firstPage.clips || firstPage.clips.length === 0) break;
-    const mappedFirst = mapClips(firstPage.clips);
-    allClips = [...allClips, ...mappedFirst];
-    currentCursor = firstPage.nextCursor ?? '';
-    const oldestClip = mappedFirst[mappedFirst.length - 1];
+    if (!page.clips || page.clips.length === 0) break;
+
+    const mappedClips = mapClips(page.clips);
+
+    const filteredClips = mappedClips.filter((clip) => clip.date >= startUTC && clip.date <= endUTC);
+    if (filteredClips.length > 0) {
+      onClips(filteredClips);
+    }
+
+    currentCursor = page.nextCursor ?? '';
+    const oldestClip = mappedClips[mappedClips.length - 1];
 
     if (oldestClip.date < startUTC || !currentCursor) {
       reachedStartDate = true;
     }
   }
-
-  result.clips = allClips.filter((clip) => clip.date >= startUTC && clip.date <= endUTC);
-  result.nextCursor = currentCursor;
-
-  return result;
+  return currentCursor;
 }
 
 async function fetchPage(channel: string, validCursor: string, sort: SortType): Promise<ApiClipsResponse> {

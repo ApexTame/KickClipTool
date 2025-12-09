@@ -1,6 +1,6 @@
 import type { ClipObject, SortType } from '$lib/types';
 import { getContext, setContext } from 'svelte';
-import { searchClips } from '$lib/api';
+import { searchClips, searchInBatches } from '$lib/api';
 
 const CLIP_KEY = Symbol('clip');
 
@@ -14,6 +14,7 @@ export class ClipState {
   endReached: boolean = $derived(this.channel != '' && this.cursor === '');
   startDate: Date | undefined = $state(undefined);
   endDate: Date | undefined = $state(undefined);
+  fetchingInBatches: boolean = $state(false);
 
   constructor() {}
 
@@ -22,6 +23,7 @@ export class ClipState {
     this.clips = [];
     this.cursor = '';
     this.sort = 'date';
+    this.fetchingInBatches = false;
   };
 
   search = async (channel: string): Promise<void> => {
@@ -32,15 +34,44 @@ export class ClipState {
       this.endDate = undefined;
     }
 
-    const res = await searchClips(this.channel, this.cursor, this.sort, this.startDate, this.endDate);
+    if (this.startDate && this.endDate) {
+      this.fetchingInBatches = true;
+      this.clips = [];
 
-    this.clips = [...this.clips, ...res.clips.filter((c1) => !this.clips.some((c2) => c1.id === c2.id))];
-    this.cursor = res.nextCursor;
+      let pendingClips: ClipObject[] = [];
+      let lastUpdate = Date.now();
+      const UPDATE_INTERVAL = 100;
+
+      const finalCursor = await searchInBatches(this.channel, this.cursor, this.sort, this.startDate, this.endDate, (newClips) => {
+        pendingClips = [
+          ...pendingClips,
+          ...newClips.filter((c1) => !this.clips.some((c2) => c1.id === c2.id) && !pendingClips.some((c2) => c1.id === c2.id)),
+        ];
+
+        const now = Date.now();
+        if (now - lastUpdate >= UPDATE_INTERVAL) {
+          this.clips = [...this.clips, ...pendingClips];
+          pendingClips = [];
+          lastUpdate = now;
+        }
+      });
+
+      if (pendingClips.length > 0) {
+        this.clips = [...this.clips, ...pendingClips];
+      }
+
+      this.cursor = finalCursor;
+      this.fetchingInBatches = false;
+    } else {
+      const res = await searchClips(this.channel, this.cursor, this.sort, this.startDate, this.endDate);
+      this.clips = [...this.clips, ...res.clips.filter((c1) => !this.clips.some((c2) => c1.id === c2.id))];
+      this.cursor = res.nextCursor;
+    }
   };
 
   more = async (): Promise<boolean> => {
     let res = false;
-    if (!this.endReached) {
+    if (!this.endReached && !this.fetchingInBatches) {
       await this.search(this.channel);
       res = true;
     }
