@@ -36,7 +36,10 @@ export class ClipState {
 
     if (this.startDate && this.endDate) {
       this.fetchingInBatches = true;
-      this.clips = [];
+
+      if (this.cursor === '') {
+        this.clips = [];
+      }
 
       let pendingClips: ClipObject[] = [];
       let lastUpdate = Date.now();
